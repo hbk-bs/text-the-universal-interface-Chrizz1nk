@@ -13,63 +13,61 @@ let messageHistory = {
     ],
 };
 
-// Simulate API since the original endpoint won't work
 const simulateAPI = async (messageHistory) => {
     const userMessage = messageHistory.messages[messageHistory.messages.length - 1];
-    
-    // Enhanced mood detection with more keywords
     const content = userMessage.content.toLowerCase();
-    let mood = 'chill';
-    let confidence = 0;
-    
-    // Happy keywords
-    const happyWords = ['happy', 'good', 'great', 'excited', 'awesome', 'fantastic', 'wonderful', 'amazing', 'joy', 'cheerful', 'delighted', 'pleased', 'glad', 'optimistic', 'bright', 'super', 'excellent', 'perfect', 'love', 'loving'];
-    const happyCount = happyWords.filter(word => content.includes(word)).length;
-    
-    // Sad keywords  
-    const sadWords = ['sad', 'down', 'depressed', 'unhappy', 'miserable', 'upset', 'crying', 'tears', 'lonely', 'hopeless', 'disappointed', 'hurt', 'pain', 'terrible', 'awful', 'bad', 'worse', 'worst', 'blue', 'gloomy'];
-    const sadCount = sadWords.filter(word => content.includes(word)).length;
-    
-    // Energetic keywords
-    const energeticWords = ['energetic', 'pumped', 'active', 'hyper', 'motivated', 'excited', 'ready', 'go', 'action', 'fast', 'quick', 'running', 'workout', 'exercise', 'dance', 'party', 'wild', 'crazy', 'intense'];
-    const energeticCount = energeticWords.filter(word => content.includes(word)).length;
-    
-    // Chill keywords
-    const chillWords = ['chill', 'relaxed', 'calm', 'peaceful', 'quiet', 'rest', 'tired', 'sleepy', 'lazy', 'slow', 'ok', 'okay', 'fine', 'normal', 'alright', 'nothing', 'boring', 'meh'];
-    const chillCount = chillWords.filter(word => content.includes(word)).length;
-    
-    // Determine mood based on highest count
-    const moodScores = {
-        happy: happyCount,
-        sad: sadCount,
-        energetic: energeticCount,
-        chill: chillCount
+
+    // Keyword lists
+    const moodKeywords = {
+        happy: ['happy', 'good', 'great', 'awesome', 'fantastic', 'joy', 'smile', 'excited', 'lovely'],
+        sad: ['sad', 'down', 'unhappy', 'cry', 'depressed', 'lonely', 'bad', 'miserable', 'tears'],
+        energetic: ['energetic', 'pumped', 'excited', 'hyper', 'active', 'motivated', 'fast', 'party'],
+        chill: ['chill', 'relaxed', 'calm', 'peaceful', 'meh', 'fine', 'okay', 'tired', 'lazy'],
     };
-    
-    // Find the mood with highest score
-    mood = Object.keys(moodScores).reduce((a, b) => moodScores[a] > moodScores[b] ? a : b);
-    
-    // If all scores are 0, try to detect mood from sentence structure
-    if (Math.max(...Object.values(moodScores)) === 0) {
-        if (content.includes('!') || content.includes('wow') || content.includes('yes')) {
-            mood = 'happy';
-        } else if (content.includes('no') || content.includes('not') || content.includes('never')) {
-            mood = 'sad';
-        } else if (content.includes('?') && content.includes('do')) {
-            mood = 'energetic';
-        } else {
-            mood = 'chill';
-        }
+
+    const moodScores = {};
+    for (const mood in moodKeywords) {
+        moodScores[mood] = moodKeywords[mood].reduce(
+            (count, keyword) => content.includes(keyword) ? count + 1 : count,
+            0
+        );
     }
 
-    console.log('Detected mood:', mood, 'Scores:', moodScores, 'Input:', content);
+    // Logging
+    console.log("Keyword matches:", moodScores);
 
+    // Determine mood by highest match
+    let detectedMood = Object.keys(moodScores).reduce((a, b) =>
+        moodScores[a] > moodScores[b] ? a : b
+    );
+
+    // Handle tie or no match (all zero)
+    const maxScore = Math.max(...Object.values(moodScores));
+    const tiedMoods = Object.keys(moodScores).filter(m => moodScores[m] === maxScore);
+
+    if (maxScore === 0) {
+        // No keyword match – fallback logic
+        if (content.includes('!') || content.includes('love') || content.includes('yes')) {
+            detectedMood = 'happy';
+        } else if (content.includes('no') || content.includes('not') || content.includes('tired')) {
+            detectedMood = 'sad';
+        } else if (content.includes('go') || content.includes('now') || content.includes('do')) {
+            detectedMood = 'energetic';
+        } else {
+            detectedMood = 'chill';
+        }
+    } else if (tiedMoods.length > 1) {
+        // Randomly choose one of the top-scoring moods
+        detectedMood = tiedMoods[Math.floor(Math.random() * tiedMoods.length)];
+    }
+
+    console.log("Final detected mood:", detectedMood);
 
     const responses = {
-        happy: "Mood: happy\n\nThat's wonderful! It's great to hear you're feeling positive today. Happiness can be contagious and really brightens up the day.\n\nWould you like to share what's making you feel so good today?",
-        sad: "Mood: sad\n\nI'm sorry to hear you're feeling down. It's completely normal to have difficult days, and it's okay to acknowledge these feelings.\n\nWould you like to talk about what's been troubling you?",
-        energetic: "Mood: energetic\n\nThat's fantastic! Having lots of energy can be really motivating and help you accomplish great things today.\n\nDo you have any exciting plans to channel that energy into?",
-        chill: "Mood: chill\n\nSounds like you're in a relaxed state of mind. Sometimes taking things easy and going with the flow is exactly what we need.\n\nAre you planning to keep this laid-back vibe for the rest of the day?"
+        happy: "Mood: happy\n\nThat's wonderful! It's great to hear you're feeling positive today. 😊\n\nWould you like to share what's making you feel so good?",
+        sad: "Mood: sad\n\nI'm sorry to hear you're feeling down. It's okay to feel that way. 💙\n\nWould you like to talk about it?",
+        energetic: "Mood: energetic\n\nWoo! You're full of energy today! ⚡\n\nDo you have something exciting planned?",
+        chill: "Mood: chill\n\nTaking it easy, huh? Nice and mellow. 😌\n\nDo you want to keep it low-key today?",
     };
 
     return {
@@ -77,12 +75,13 @@ const simulateAPI = async (messageHistory) => {
             choices: [{
                 message: {
                     role: 'assistant',
-                    content: responses[mood]
+                    content: responses[detectedMood]
                 }
             }]
         }
     };
 };
+
 
 const MAX_HISTORY_LENGTH = 10;
 
@@ -150,7 +149,8 @@ document.addEventListener('DOMContentLoaded', () => {
             scrollToBottom(chatHistoryElement);
 
             // Check for mood and play appropriate sound
-            const moodMatch = botMessage.content.match(/mood:?\s*(happy|sad|energetic|chill)/i);
+           const moodMatch = botMessage.content.match(/mood[:\-]?\s*(happy|sad|energetic|chill)/i);
+
             if (moodMatch) {
                 const mood = moodMatch[1].toLowerCase();
                 const song = moodsToSongs[mood];
