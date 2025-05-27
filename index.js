@@ -17,52 +17,17 @@ let messageHistory = {
 const simulateAPI = async (messageHistory) => {
     const userMessage = messageHistory.messages[messageHistory.messages.length - 1];
     
-    // Enhanced mood detection with more keywords
+    // Simple mood detection based on keywords
     const content = userMessage.content.toLowerCase();
     let mood = 'chill';
-    let confidence = 0;
     
-    // Happy keywords
-    const happyWords = ['happy', 'good', 'great', 'excited', 'awesome', 'fantastic', 'wonderful', 'amazing', 'joy', 'cheerful', 'delighted', 'pleased', 'glad', 'optimistic', 'bright', 'super', 'excellent', 'perfect', 'love', 'loving'];
-    const happyCount = happyWords.filter(word => content.includes(word)).length;
-    
-    // Sad keywords  
-    const sadWords = ['sad', 'down', 'depressed', 'unhappy', 'miserable', 'upset', 'crying', 'tears', 'lonely', 'hopeless', 'disappointed', 'hurt', 'pain', 'terrible', 'awful', 'bad', 'worse', 'worst', 'blue', 'gloomy'];
-    const sadCount = sadWords.filter(word => content.includes(word)).length;
-    
-    // Energetic keywords
-    const energeticWords = ['energetic', 'pumped', 'active', 'hyper', 'motivated', 'excited', 'ready', 'go', 'action', 'fast', 'quick', 'running', 'workout', 'exercise', 'dance', 'party', 'wild', 'crazy', 'intense'];
-    const energeticCount = energeticWords.filter(word => content.includes(word)).length;
-    
-    // Chill keywords
-    const chillWords = ['chill', 'relaxed', 'calm', 'peaceful', 'quiet', 'rest', 'tired', 'sleepy', 'lazy', 'slow', 'ok', 'okay', 'fine', 'normal', 'alright', 'nothing', 'boring', 'meh'];
-    const chillCount = chillWords.filter(word => content.includes(word)).length;
-    
-    // Determine mood based on highest count
-    const moodScores = {
-        happy: happyCount,
-        sad: sadCount,
-        energetic: energeticCount,
-        chill: chillCount
-    };
-    
-    // Find the mood with highest score
-    mood = Object.keys(moodScores).reduce((a, b) => moodScores[a] > moodScores[b] ? a : b);
-    
-    // If all scores are 0, try to detect mood from sentence structure
-    if (Math.max(...Object.values(moodScores)) === 0) {
-        if (content.includes('!') || content.includes('wow') || content.includes('yes')) {
-            mood = 'happy';
-        } else if (content.includes('no') || content.includes('not') || content.includes('never')) {
-            mood = 'sad';
-        } else if (content.includes('?') && content.includes('do')) {
-            mood = 'energetic';
-        } else {
-            mood = 'chill';
-        }
+    if (content.includes('happy') || content.includes('good') || content.includes('great') || content.includes('excited')) {
+        mood = 'happy';
+    } else if (content.includes('sad') || content.includes('down') || content.includes('depressed') || content.includes('bad')) {
+        mood = 'sad';
+    } else if (content.includes('energetic') || content.includes('pumped') || content.includes('active') || content.includes('hyper')) {
+        mood = 'energetic';
     }
-
-    console.log('Detected mood:', mood, 'Scores:', moodScores, 'Input:', content);
 
     const responses = {
         happy: "Mood: happy\n\nThat's wonderful! It's great to hear you're feeling positive today. Happiness can be contagious and really brightens up the day.\n\nWould you like to share what's making you feel so good today?",
@@ -87,9 +52,9 @@ const MAX_HISTORY_LENGTH = 10;
 
 const moodsToSongs = {
     happy: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
-    sad: 'music/sad-music.mp3', 
-    energetic: 'music/energetic-music.mp3',
-    chill: 'music/chill-music.mp3',
+    sad: 'https://www.soundjay.com/misc/sounds/fail-buzzer-02.wav', 
+    energetic: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
+    chill: 'https://cdn.freesound.org/previews/316/316847_1676145-lq.mp3',
 };
 
 document.addEventListener('DOMContentLoaded', () => {
