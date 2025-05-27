@@ -87,9 +87,9 @@ const MAX_HISTORY_LENGTH = 10;
 
 const moodsToSongs = {
     happy: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
-    sad: 'https://www.soundjay.com/misc/sounds/fail-buzzer-02.wav', 
-    energetic: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
-    chill: 'https://cdn.freesound.org/previews/316/316847_1676145-lq.mp3',
+    sad: 'music/sad-music.mp3', 
+    energetic: 'music/energetic-music.mp3',
+    chill: 'music/chill-music.mp3',
 };
 
 document.addEventListener('DOMContentLoaded', () => {
