@@ -64,6 +64,7 @@ const simulateAPI = async (messageHistory) => {
 
     console.log('Detected mood:', mood, 'Scores:', moodScores, 'Input:', content);
 
+
     const responses = {
         happy: "Mood: happy\n\nThat's wonderful! It's great to hear you're feeling positive today. Happiness can be contagious and really brightens up the day.\n\nWould you like to share what's making you feel so good today?",
         sad: "Mood: sad\n\nI'm sorry to hear you're feeling down. It's completely normal to have difficult days, and it's okay to acknowledge these feelings.\n\nWould you like to talk about what's been troubling you?",
@@ -86,7 +87,7 @@ const simulateAPI = async (messageHistory) => {
 const MAX_HISTORY_LENGTH = 10;
 
 const moodsToSongs = {
-    happy: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
+    happy: 'music/happy_techno.mp3',
     sad: 'music/sad_techno.mp3', 
     energetic: 'music/energetic_techno.mp3',
     chill: 'music/chill_techno.mp3',
@@ -107,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add initial greeting
     const initialMessage = {
         role: 'assistant',
-        content: 'Hallo! Ich bin dein stimmungsbasierter Assistent. Wie fühlst du dich heute?'
+        content: 'HI! Im your mood-based assistant. How are you feeling today? Please share your thoughts, and I will support you with some beats.'
     };
     messageHistory.messages.push(initialMessage);
     chatHistoryElement.innerHTML = addToChatHistoryElement(messageHistory);
