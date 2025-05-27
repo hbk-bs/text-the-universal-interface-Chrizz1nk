@@ -7,7 +7,6 @@ html,
 body {
   height: 100%;
   font-family: system-ui, sans-serif;
-  font-weight: normal;
 }
 main {
   width: 700px;
@@ -36,7 +35,6 @@ main {
 .chat-history > .message.user {
   align-self: flex-end;
 }
-
 form {
   width: 100%;
   display: flex;
@@ -44,11 +42,13 @@ form {
   align-items: center;
   gap: 8px;
 }
-
 input[type='text'] {
   flex-grow: 1;
   height: 32px;
 }
 button {
   height: 100%;
+}
+audio {
+  width: 100%;
 }
