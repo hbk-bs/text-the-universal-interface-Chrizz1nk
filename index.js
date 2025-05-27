@@ -7,7 +7,7 @@ let messageHistory = {
                 Then, analyze their response and respond with:
                 1. First line should contain "Mood: [happy/sad/energetic/chill]"
                 2. Then provide a thoughtful response about their mood
-                3. Then ask a follow-up yes/no question.
+                3. You need to play the right music. For example: if the user types "happy", play happy_techno.mp3.
             `,
         },
     ],
@@ -19,10 +19,10 @@ const simulateAPI = async (messageHistory) => {
 
     // Keyword lists
     const moodKeywords = {
-        happy: ['happy', 'good', 'great', 'awesome', 'fantastic', 'joy', 'smile', 'excited', 'lovely'],
-        sad: ['sad', 'down', 'unhappy', 'cry', 'depressed', 'lonely', 'bad', 'miserable', 'tears'],
-        energetic: ['energetic', 'pumped', 'excited', 'hyper', 'active', 'motivated', 'fast', 'party'],
-        chill: ['chill', 'relaxed', 'calm', 'peaceful', 'meh', 'fine', 'okay', 'tired', 'lazy'],
+        happy: ['happy'],
+        sad: ['sad'],
+        energetic: ['energetic'],
+        chill: ['chill'],
     };
 
     const moodScores = {};
@@ -45,22 +45,7 @@ const simulateAPI = async (messageHistory) => {
     const maxScore = Math.max(...Object.values(moodScores));
     const tiedMoods = Object.keys(moodScores).filter(m => moodScores[m] === maxScore);
 
-    if (maxScore === 0) {
-        // No keyword match – fallback logic
-        if (content.includes('!') || content.includes('love') || content.includes('yes')) {
-            detectedMood = 'happy';
-        } else if (content.includes('no') || content.includes('not') || content.includes('tired')) {
-            detectedMood = 'sad';
-        } else if (content.includes('go') || content.includes('now') || content.includes('do')) {
-            detectedMood = 'energetic';
-        } else {
-            detectedMood = 'chill';
-        }
-    } else if (tiedMoods.length > 1) {
-        // Randomly choose one of the top-scoring moods
-        detectedMood = tiedMoods[Math.floor(Math.random() * tiedMoods.length)];
-    }
-
+    
     console.log("Final detected mood:", detectedMood);
 
     const responses = {
