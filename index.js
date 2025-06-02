@@ -7,17 +7,24 @@ let messageHistory = {
                 Then, analyze their response and respond with:
                 1. First line should contain "Mood: [happy/sad/energetic/chill]"
                 2. Then provide a thoughtful response about their mood
-                3. You need to play the right music. For example: if the user types "happy", play happy_techno.mp3.
+                3. You need to play the right music. For example: if the user types "happy", play happy_techno.mp3
             `,
         },
     ],
 };
 
+// TODO: use your own val.town endpoint
+// remix: https://val.town/remix/ff6347-openai-api
+const apiEndpoint = 'https://chrizz--455cde100cc54d9da8ef5b40e1b41a04.web.val.run';
+if (!apiEndpoint.includes('run')) {
+	throw new Error('Please use your own val.town endpoint!!!');
+}
+
 const simulateAPI = async (messageHistory) => {
     const userMessage = messageHistory.messages[messageHistory.messages.length - 1];
     const content = userMessage.content.toLowerCase();
 
-    // Keyword lists
+    // Wörter zum erkennen der Stimmung
     const moodKeywords = {
         happy: ['happy'],
         sad: ['sad'],
@@ -33,10 +40,10 @@ const simulateAPI = async (messageHistory) => {
         );
     }
 
-    // Logging
+    
     console.log("Keyword matches:", moodScores);
 
-    // Determine mood by highest match
+    // Wähle den mood mit dem highest match
     let detectedMood = Object.keys(moodScores).reduce((a, b) =>
         moodScores[a] > moodScores[b] ? a : b
     );
@@ -47,7 +54,7 @@ const simulateAPI = async (messageHistory) => {
 
     
     console.log("Final detected mood:", detectedMood);
-
+    // responses von dem ChatBot nach mood calculation
     const responses = {
         happy: "Mood: happy\n\nThat's wonderful! It's great to hear you're feeling positive today. 😊\n\nWould you like to share what's making you feel so good?",
         sad: "Mood: sad\n\nI'm sorry to hear you're feeling down. It's okay to feel that way. 💙\n\nWould you like to talk about it?",
@@ -70,6 +77,7 @@ const simulateAPI = async (messageHistory) => {
 
 const MAX_HISTORY_LENGTH = 10;
 
+// Musik die geladen wird
 const moodsToSongs = {
     happy: 'music/happy_techno.mp3',
     sad: 'music/sad_techno.mp3', 
@@ -89,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // Add initial greeting
+    // Bot gibt ein Intro
     const initialMessage = {
         role: 'assistant',
         content: 'HI! Im your mood-based assistant. How are you feeling today? Please share your thoughts, and I will support you with some beats.'
@@ -120,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
         scrollToBottom(chatHistoryElement);
 
         try {
-            // Simulate delay for more realistic feel
+            // delay für mehr realität
             await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
             const response = await simulateAPI(messageHistory);
             
@@ -133,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
             chatHistoryElement.innerHTML = addToChatHistoryElement(messageHistory);
             scrollToBottom(chatHistoryElement);
 
-            // Check for mood and play appropriate sound
+            // erkenne den mood und lade die musik dazu
            const moodMatch = botMessage.content.match(/mood[:\-]?\s*(happy|sad|energetic|chill)/i);
 
             if (moodMatch) {
@@ -165,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Allow Enter key to submit
+    // Enter button zum Senden der Nachricht
     inputElement.addEventListener('keypress', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
