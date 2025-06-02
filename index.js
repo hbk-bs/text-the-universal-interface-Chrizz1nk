@@ -1,212 +1,231 @@
-let messageHistory = {
-    messages: [
-        {
-            role: 'system',
-            content: `
-                You are a mood-based assistant. Ask the user how they are feeling.
-                Then, analyze their response and respond with:
-                1. First line should contain "Mood: [happy/sad/energetic/chill]"
-                2. Then provide a thoughtful response about their mood
-                3. You need to play the right music. For example: if the user types "happy", play happy_techno.mp3
-            `,
-        },
-    ],
-};
-
-// TODO: use your own val.town endpoint
-// remix: https://val.town/remix/ff6347-openai-api
-const apiEndpoint = 'https://chrizz--455cde100cc54d9da8ef5b40e1b41a04.web.val.run';
-if (!apiEndpoint.includes('run')) {
-	throw new Error('Please use your own val.town endpoint!!!');
-}
-
-const simulateAPI = async (messageHistory) => {
-    const userMessage = messageHistory.messages[messageHistory.messages.length - 1];
-    const content = userMessage.content.toLowerCase();
-
-    // Wörter zum erkennen der Stimmung
-    const moodKeywords = {
-        happy: ['happy'],
-        sad: ['sad'],
-        energetic: ['energetic'],
-        chill: ['chill'],
-    };
-
-    const moodScores = {};
-    for (const mood in moodKeywords) {
-        moodScores[mood] = moodKeywords[mood].reduce(
-            (count, keyword) => content.includes(keyword) ? count + 1 : count,
-            0
-        );
-    }
-
-    
-    console.log("Keyword matches:", moodScores);
-
-    // Wähle den mood mit dem highest match
-    let detectedMood = Object.keys(moodScores).reduce((a, b) =>
-        moodScores[a] > moodScores[b] ? a : b
-    );
-
-    // Handle tie or no match (all zero)
-    const maxScore = Math.max(...Object.values(moodScores));
-    const tiedMoods = Object.keys(moodScores).filter(m => moodScores[m] === maxScore);
-
-    
-    console.log("Final detected mood:", detectedMood);
-    // responses von dem ChatBot nach mood calculation
-    const responses = {
-        happy: "Mood: happy\n\nThat's wonderful! It's great to hear you're feeling positive today. 😊\n\nWould you like to share what's making you feel so good?",
-        sad: "Mood: sad\n\nI'm sorry to hear you're feeling down. It's okay to feel that way. 💙\n\nWould you like to talk about it?",
-        energetic: "Mood: energetic\n\nWoo! You're full of energy today! ⚡\n\nDo you have something exciting planned?",
-        chill: "Mood: chill\n\nTaking it easy, huh? Nice and mellow. 😌\n\nDo you want to keep it low-key today?",
-    };
-
-    return {
-        completion: {
-            choices: [{
-                message: {
-                    role: 'assistant',
-                    content: responses[detectedMood]
-                }
-            }]
-        }
-    };
-};
-
-
+// Configuration
+const API_ENDPOINT = 'https://chrizz--455cde100cc54d9da8ef5b40e1b41a04.web.val.run';
 const MAX_HISTORY_LENGTH = 10;
 
-// Musik die geladen wird
+// Mood to music mapping
 const moodsToSongs = {
     happy: 'music/happy_techno.mp3',
-    sad: 'music/sad_techno.mp3', 
+    sad: 'music/sad_techno.mp3',
     energetic: 'music/energetic_techno.mp3',
     chill: 'music/chill_techno.mp3',
 };
 
+// Mood responses
+const moodResponses = {
+    happy: "🎉 Ich spüre deine gute Laune! Hier ist ein fröhlicher Techno-Beat, der perfekt zu deiner Stimmung passt!",
+    sad: "💙 Ich verstehe, dass du dich nicht so gut fühlst. Lass diese melancholischen Techno-Klänge deine Seele berühren.",
+    energetic: "⚡ Wow, du sprühst vor Energie! Dieser kraftvolle Techno-Track wird dich noch mehr antreiben!",
+    chill: "😌 Zeit zum Entspannen! Dieser chille Techno-Beat hilft dir dabei, zur Ruhe zu kommen."
+};
+
+const moodEmojis = {
+    happy: '😊',
+    sad: '😢',
+    energetic: '⚡',
+    chill: '😌'
+};
+
+// Message history
+let messageHistory = {
+    messages: [
+        {
+            role: 'system',
+            content: 'Du bist ein freundlicher Musik-Assistant, der basierend auf der Stimmung des Users passende Techno-Musik abspielt.'
+        }
+    ]
+};
+
+let currentMood = null;
+
+// DOM Elements
+const chatHistoryElement = document.querySelector('.chat-history');
+const inputElement = document.querySelector('input[name="content"]');
+const formElement = document.getElementById('chatForm');
+const audioPlayer = document.getElementById('technoPlayer');
+const audioSource = document.getElementById('audioSource');
+const moodButtons = document.querySelectorAll('.mood-btn');
+const currentMoodIndicator = document.querySelector('.current-mood .mood-indicator');
+const audioPlayerContainer = document.querySelector('.audio-player');
+
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    const chatHistoryElement = document.querySelector('.chat-history');
-    const inputElement = document.querySelector('input');
-    const formElement = document.getElementById('chatForm');
-    const audioPlayer = document.getElementById('technoPlayer');
-    const audioSource = document.getElementById('audioSource');
-
-    if (!chatHistoryElement || !formElement || !inputElement || !audioPlayer || !audioSource) {
-        console.error('One or more elements not found.');
-        return;
-    }
-
-    // Bot gibt ein Intro
-    const initialMessage = {
+    // Add welcome message
+    const welcomeMessage = {
         role: 'assistant',
-        content: 'HI! Im your mood-based assistant. How are you feeling today? Please share your thoughts, and I will support you with some beats.'
+        content: '🎵 Hallo! Ich bin dein Techno-Mood-Assistant! Wähle dein aktuelles Mood mit den Emojis aus und ich spiele dir passende Musik dazu. Du kannst auch einfach mit mir chatten!'
     };
-    messageHistory.messages.push(initialMessage);
-    chatHistoryElement.innerHTML = addToChatHistoryElement(messageHistory);
+    
+    messageHistory.messages.push(welcomeMessage);
+    updateChatHistory();
+    
+    // Setup event listeners
+    setupMoodButtons();
+    setupForm();
+    setupKeypress();
+});
 
+function setupMoodButtons() {
+    moodButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            const mood = e.target.dataset.mood;
+            selectMood(mood);
+        });
+    });
+}
+
+function selectMood(mood) {
+    currentMood = mood;
+    
+    // Update button states
+    moodButtons.forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`[data-mood="${mood}"]`).classList.add('active');
+    
+    // Update mood indicator
+    currentMoodIndicator.textContent = moodEmojis[mood];
+    
+    // Add mood message to chat
+    const moodMessage = {
+        role: 'user',
+        content: `Mood: ${mood}`
+    };
+    
+    const responseMessage = {
+        role: 'assistant',
+        content: moodResponses[mood]
+    };
+    
+    messageHistory.messages.push(moodMessage, responseMessage);
+    messageHistory = truncateHistory(messageHistory);
+    updateChatHistory();
+    
+    // Play corresponding music
+    playMoodMusic(mood);
+}
+
+function playMoodMusic(mood) {
+    const song = moodsToSongs[mood];
+    if (song) {
+        audioSource.src = song;
+        audioPlayer.load();
+        audioPlayerContainer.style.display = 'block';
+        
+        // Try to play (might be blocked by browser)
+        audioPlayer.play().catch(error => {
+            console.log('Autoplay blocked:', error);
+        });
+    }
+}
+
+function setupForm() {
     formElement.addEventListener('submit', async (event) => {
         event.preventDefault();
-        event.stopPropagation();
         
-        const formData = new FormData(formElement);
-        const content = formData.get('content');
+        const content = inputElement.value.trim();
+        if (!content) return;
         
-        if (!content || content.trim() === '') return;
-
         // Add user message
-        messageHistory.messages.push({ role: 'user', content: content.trim() });
+        const userMessage = { role: 'user', content };
+        messageHistory.messages.push(userMessage);
         messageHistory = truncateHistory(messageHistory);
-        chatHistoryElement.innerHTML = addToChatHistoryElement(messageHistory);
+        updateChatHistory();
+        
         inputElement.value = '';
-        scrollToBottom(chatHistoryElement);
-
-        // Add loading indicator
-        const loadingMessage = { role: 'assistant', content: 'Typing...', loading: true };
+        
+        // Add loading message
+        const loadingMessage = { role: 'assistant', content: 'Schreibe...', loading: true };
         messageHistory.messages.push(loadingMessage);
-        chatHistoryElement.innerHTML = addToChatHistoryElement(messageHistory);
-        scrollToBottom(chatHistoryElement);
-
+        updateChatHistory();
+        
         try {
-            // delay für mehr realität
-            await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-            const response = await simulateAPI(messageHistory);
+            // Call API
+            const response = await fetch(API_ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: messageHistory.messages.filter(m => !m.loading) }),
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
             
             // Remove loading message
             messageHistory.messages.pop();
             
-            const botMessage = response.completion.choices[0].message;
+            // Add AI response
+            const botMessage = data.completion?.choices?.[0]?.message || {
+                role: 'assistant',
+                content: 'Entschuldigung, ich konnte keine Antwort generieren.'
+            };
+            
             messageHistory.messages.push(botMessage);
             messageHistory = truncateHistory(messageHistory);
-            chatHistoryElement.innerHTML = addToChatHistoryElement(messageHistory);
-            scrollToBottom(chatHistoryElement);
-
-            // erkenne den mood und lade die musik dazu
-           const moodMatch = botMessage.content.match(/mood[:\-]?\s*(happy|sad|energetic|chill)/i);
-
-            if (moodMatch) {
-                const mood = moodMatch[1].toLowerCase();
-                const song = moodsToSongs[mood];
-                if (song) {
-                    audioSource.src = song;
-                    audioPlayer.load();
-                    audioPlayer.style.display = 'block';
-                    try {
-                        await audioPlayer.play();
-                    } catch (playError) {
-                        console.log('Audio autoplay blocked:', playError);
-                    }
-                }
-            }
+            updateChatHistory();
+            
+            // Check if mood was detected in response
+            detectAndPlayMoodMusic(botMessage.content);
+            
         } catch (error) {
+            console.error('API Error:', error);
+            
             // Remove loading message
             messageHistory.messages.pop();
             
+            // Add error message
             const errorMessage = {
                 role: 'assistant',
                 content: 'Entschuldigung, es gab einen Fehler beim Verarbeiten deiner Nachricht. Bitte versuche es erneut.'
             };
+            
             messageHistory.messages.push(errorMessage);
-            chatHistoryElement.innerHTML = addToChatHistoryElement(messageHistory);
-            scrollToBottom(chatHistoryElement);
-            console.error('Error:', error);
+            updateChatHistory();
         }
     });
+}
 
-    // Enter button zum Senden der Nachricht
+function setupKeypress() {
     inputElement.addEventListener('keypress', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
-            const submitEvent = new Event('submit', {
-                bubbles: true,
-                cancelable: true
-            });
-            formElement.dispatchEvent(submitEvent);
+            formElement.dispatchEvent(new Event('submit'));
         }
     });
-});
+}
 
-function addToChatHistoryElement(mhistory) {
-    return mhistory.messages
-        .map((msg) => {
-            if (msg.role === 'system') return '';
+function detectAndPlayMoodMusic(content) {
+    const moodMatch = content.toLowerCase().match(/\b(happy|sad|energetic|chill)\b/);
+    if (moodMatch) {
+        const detectedMood = moodMatch[1];
+        playMoodMusic(detectedMood);
+    }
+}
+
+function updateChatHistory() {
+    chatHistoryElement.innerHTML = messageHistory.messages
+        .filter(msg => msg.role !== 'system')
+        .map(msg => {
             const loadingClass = msg.loading ? ' loading' : '';
             return `<div class="message ${msg.role}${loadingClass}">${msg.content.replace(/\n/g, '<br>')}</div>`;
         })
         .join('');
+    
+    scrollToBottom(chatHistoryElement);
 }
 
 function scrollToBottom(container) {
     container.scrollTop = container.scrollHeight;
 }
 
-function truncateHistory(h) {
-    const { messages } = h;
+function truncateHistory(history) {
+    const { messages } = history;
     const [system, ...rest] = messages;
+    
     if (rest.length > MAX_HISTORY_LENGTH) {
-        return { 
+        return {
             messages: [system, ...rest.slice(-MAX_HISTORY_LENGTH)]
         };
     }
-    return h;
+    
+    return history;
 }

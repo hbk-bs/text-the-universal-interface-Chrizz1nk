@@ -3,22 +3,42 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chatty chat chat</title>
+    <title>Mood Techno Chat</title>
     <link rel="stylesheet" href="style.css" />
 </head>
 <body>
     <main>
-        <div class="chat-history"></div>
-        <form id="chatForm">
-            <input type="text" name="content" placeholder="Wie fühlst du dich heute?" />
-            <button type="submit">Send</button>
-        </form>
-        <!-- Audio Player for Techno Music -->
-        <audio id="technoPlayer" controls style="display: none;">
-            <source id="audioSource" src="" type="audio/mp3" />
-            Your browser does not support the audio element.
-        </audio>
+        <div class="mood-selector">
+            <button class="mood-btn" data-mood="happy" title="Happy">😊</button>
+            <button class="mood-btn" data-mood="sad" title="Sad">😢</button>
+            <button class="mood-btn" data-mood="energetic" title="Energetic">⚡</button>
+            <button class="mood-btn" data-mood="chill" title="Chill">😌</button>
+        </div>
+        
+        <div class="chat-container">
+            <div class="chat-header">
+                <h1>🎵 Techno Mood Chat</h1>
+                <div class="current-mood">Wähle dein Mood aus → <span class="mood-indicator">🎭</span></div>
+            </div>
+            
+            <div class="chat-history"></div>
+            
+            <div class="chat-input">
+                <form id="chatForm">
+                    <input type="text" name="content" placeholder="Erzähl mir von deinem Tag..." />
+                    <button type="submit">Send</button>
+                </form>
+            </div>
+            
+            <div class="audio-player">
+                <audio id="technoPlayer" controls>
+                    <source id="audioSource" src="" type="audio/mp3" />
+                    Your browser does not support the audio element.
+                </audio>
+            </div>
+        </div>
     </main>
+
     <script src="index.js"></script>
 </body>
 </html>
