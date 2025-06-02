@@ -6,8 +6,8 @@ const MAX_HISTORY_LENGTH = 10;
 const moodsToSongs = {
     happy: 'music/happy_techno.mp3',
     sad: 'music/sad_techno.mp3',
-    energetic: 'music/energetic_techno.mp3',
-    chill: 'music/chill_techno.mp3',
+    energetic: ['music/energetic_techno.mp3', 'music/hard_techno.mp3'],
+    chill: ['music/chill_techno.mp3', 'music/chill1_techno.mp3', 'music/chill2_techno.mp3']
 };
 
 // Mood responses
@@ -30,7 +30,17 @@ let messageHistory = {
     messages: [
         {
             role: 'system',
-            content: 'Du bist ein freundlicher Musik-Assistant, der basierend auf der Stimmung des Users passende Techno-Musik abspielt.'
+            content: `Du bist ein freundlicher Techno-Musik-Assistant. 
+            
+            Wenn jemand ein Mood (happy, sad, energetic, chill) wählt oder erwähnt, reagiere darauf und erkläre, welche Art von Techno-Musik zu dieser Stimmung passt.
+            
+            Du kannst auch normale Gespräche führen und auf Fragen antworten. Sei freundlich, enthusiastisch über Musik und hilfsbereit.
+            
+            Die verfügbaren Moods sind:
+            - happy: Fröhliche, uplifting Techno-Beats
+            - sad: Melancholische, emotionale Techno-Klänge  
+            - energetic: Kraftvolle, intensive Techno-Tracks (auch Hard Techno)
+            - chill: Entspannte, ambient Techno-Musik`
         }
     ]
 };
@@ -83,27 +93,33 @@ function selectMood(mood) {
     // Update mood indicator
     currentMoodIndicator.textContent = moodEmojis[mood];
     
-    // Add mood message to chat
+    // Add mood selection as user message and let AI respond
     const moodMessage = {
         role: 'user',
-        content: `Mood: ${mood}`
+        content: `Ich fühle mich gerade ${mood}. Spiel mir passende Musik dazu!`
     };
     
-    const responseMessage = {
-        role: 'assistant',
-        content: moodResponses[mood]
-    };
-    
-    messageHistory.messages.push(moodMessage, responseMessage);
+    messageHistory.messages.push(moodMessage);
     messageHistory = truncateHistory(messageHistory);
     updateChatHistory();
     
-    // Play corresponding music
+    // Play corresponding music immediately
     playMoodMusic(mood);
+    
+    // Let AI respond to the mood
+    sendToAI();
 }
 
 function playMoodMusic(mood) {
-    const song = moodsToSongs[mood];
+    let song = moodsToSongs[mood];
+    
+    // If mood has multiple songs (array), pick one randomly
+    if (Array.isArray(song)) {
+        const randomIndex = Math.floor(Math.random() * song.length);
+        song = song[randomIndex];
+        console.log(`Playing random ${mood} track: ${song}`);
+    }
+    
     if (song) {
         audioSource.src = song;
         audioPlayer.load();
@@ -131,57 +147,62 @@ function setupForm() {
         
         inputElement.value = '';
         
-        // Add loading message
-        const loadingMessage = { role: 'assistant', content: 'Schreibe...', loading: true };
-        messageHistory.messages.push(loadingMessage);
+        // Send to AI
+        await sendToAI();
+    });
+}
+
+async function sendToAI() {
+    // Add loading message
+    const loadingMessage = { role: 'assistant', content: 'Schreibe...', loading: true };
+    messageHistory.messages.push(loadingMessage);
+    updateChatHistory();
+    
+    try {
+        // Call API
+        const response = await fetch(API_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: messageHistory.messages.filter(m => !m.loading) }),
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Remove loading message
+        messageHistory.messages.pop();
+        
+        // Add AI response
+        const botMessage = data.completion?.choices?.[0]?.message || {
+            role: 'assistant',
+            content: 'Entschuldigung, ich konnte keine Antwort generieren.'
+        };
+        
+        messageHistory.messages.push(botMessage);
+        messageHistory = truncateHistory(messageHistory);
         updateChatHistory();
         
-        try {
-            // Call API
-            const response = await fetch(API_ENDPOINT, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: messageHistory.messages.filter(m => !m.loading) }),
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            
-            // Remove loading message
-            messageHistory.messages.pop();
-            
-            // Add AI response
-            const botMessage = data.completion?.choices?.[0]?.message || {
-                role: 'assistant',
-                content: 'Entschuldigung, ich konnte keine Antwort generieren.'
-            };
-            
-            messageHistory.messages.push(botMessage);
-            messageHistory = truncateHistory(messageHistory);
-            updateChatHistory();
-            
-            // Check if mood was detected in response
-            detectAndPlayMoodMusic(botMessage.content);
-            
-        } catch (error) {
-            console.error('API Error:', error);
-            
-            // Remove loading message
-            messageHistory.messages.pop();
-            
-            // Add error message
-            const errorMessage = {
-                role: 'assistant',
-                content: 'Entschuldigung, es gab einen Fehler beim Verarbeiten deiner Nachricht. Bitte versuche es erneut.'
-            };
-            
-            messageHistory.messages.push(errorMessage);
-            updateChatHistory();
-        }
-    });
+        // Check if mood was detected in response and play music
+        detectAndPlayMoodMusic(botMessage.content);
+        
+    } catch (error) {
+        console.error('API Error:', error);
+        
+        // Remove loading message
+        messageHistory.messages.pop();
+        
+        // Add error message
+        const errorMessage = {
+            role: 'assistant',
+            content: 'Entschuldigung, es gab einen Fehler beim Verarbeiten deiner Nachricht. Bitte versuche es erneut.'
+        };
+        
+        messageHistory.messages.push(errorMessage);
+        updateChatHistory();
+    }
 }
 
 function setupKeypress() {
