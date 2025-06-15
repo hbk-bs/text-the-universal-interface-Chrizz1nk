@@ -8,11 +8,9 @@ const moodsToSongs = {
     sad: 'music/sad_techno.mp3',
     energetic: ['music/energetic_techno.mp3', 'music/hard_techno.mp3'],
     chill: ['music/chill_techno.mp3', 'music/chill1_techno.mp3', 'music/chill2_techno.mp3'],
-    romantic:  ['music/romantic_techno.mp3', 'music/romantic1_techno.mp3', 'music/romantic2_techno.mp3'],
-    angry:  ['music/angry_techno.mp3', 'music/angry1_techno.mp3']
+    romantic: ['music/romantic_techno.mp3', 'music/romantic1_techno.mp3', 'music/romantic2_techno.mp3'],
+    angry: ['music/angry_techno.mp3', 'music/angry1_techno.mp3']
 };
-
-
 
 const moodEmojis = {
     happy: '😊',
@@ -30,16 +28,19 @@ let messageHistory = {
             role: 'system',
             content: `Du bist ein freundlicher Techno-Musik-Assistant. 
             
-            Wenn jemand ein Mood (happy, sad, energetic, chill) wählt oder erwähnt, reagiere darauf und erkläre, welche Art von Techno-Musik zu dieser Stimmung passt.
-            
-            Du kannst auch normale Gespräche führen und auf Fragen antworten. Sei freundlich, enthusiastisch über Musik und hilfsbereit.
-            Gib kurze freundliche Antworten und versuche, die Stimmung des Nutzers zu erkennen.
-            
-            Die verfügbaren Moods sind:
-            - happy: Fröhliche, uplifting Techno-Beats
-            - sad: Melancholische, emotionale Techno-Klänge  
-            - energetic: Kraftvolle, intensive Techno-Tracks (auch Hard Techno)
-            - chill: Entspannte, ambient Techno-Musik`
+Wenn jemand ein Mood (happy, sad, energetic, chill, romantic, angry) wählt oder erwähnt, reagiere darauf und erkläre, welche Art von Techno-Musik zu dieser Stimmung passt.
+
+Du kannst auch normale Gespräche führen und auf Fragen antworten. Sei freundlich, enthusiastisch über Musik und hilfsbereit.
+
+Gib kurze freundliche Antworten und versuche, die Stimmung des Nutzers zu erkennen.
+
+Die verfügbaren Moods sind:
+- happy: Fröhliche, uplifting Techno-Beats
+- sad: Melancholische, emotionale Techno-Klänge  
+- energetic: Kraftvolle, intensive Techno-Tracks (auch Hard Techno)
+- chill: Entspannte, ambient Techno-Musik
+- romantic: Liebevolle, gefühlvolle elektronische Sounds
+- angry: Aggressivere, härtere Beats`
         }
     ]
 };
@@ -58,16 +59,14 @@ const audioPlayerContainer = document.querySelector('.audio-player');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    // Add welcome message
     const welcomeMessage = {
         role: 'assistant',
         content: '🎵 Hallo! Ich bin dein Techno-Mood-Assistant! Wähle dein aktuelles Mood mit den Emojis aus und ich spiele dir passende Musik dazu. Du kannst auch einfach mit mir chatten!'
     };
-    
+
     messageHistory.messages.push(welcomeMessage);
     updateChatHistory();
-    
-    // Setup event listeners
+
     setupMoodButtons();
     setupForm();
     setupKeypress();
@@ -84,121 +83,115 @@ function setupMoodButtons() {
 
 function selectMood(mood) {
     currentMood = mood;
-    
+
     // Update button states
     moodButtons.forEach(btn => btn.classList.remove('active'));
     document.querySelector(`[data-mood="${mood}"]`).classList.add('active');
-    
+
     // Update mood indicator
     currentMoodIndicator.textContent = moodEmojis[mood];
-    
+
     // Add mood selection as user message and let AI respond
     const moodMessage = {
         role: 'user',
         content: `Ich fühle mich gerade ${mood}. Spiel mir passende Musik dazu!`
     };
-    
+
     messageHistory.messages.push(moodMessage);
     messageHistory = truncateHistory(messageHistory);
     updateChatHistory();
-    
-    // Play corresponding music immediately
+
+    // Play music
     playMoodMusic(mood);
-    
-    // Let AI respond to the mood
+
+    // Get AI response
     sendToAI();
 }
 
 function playMoodMusic(mood) {
     let song = moodsToSongs[mood];
-    
-    // If mood has multiple songs (array), pick one randomly
+
+    console.log(`🎧 Aktueller Mood: ${mood}`);
+    console.log('Abspielbare Tracks:', song);
+
     if (Array.isArray(song)) {
         const randomIndex = Math.floor(Math.random() * song.length);
         song = song[randomIndex];
-        console.log(`Playing random ${mood} track: ${song}`);
+        console.log(`🎲 Zufälliger Track gewählt: ${song}`);
+    } else {
+        console.log(`🎵 Einzelner Track gewählt: ${song}`);
     }
-    
+
     if (song) {
         audioSource.src = song;
         audioPlayer.load();
         audioPlayerContainer.style.display = 'block';
-        
-        // Try to play (might be blocked by browser)
+
         audioPlayer.play().catch(error => {
-            console.log('Autoplay blocked:', error);
+            console.log('Autoplay blockiert:', error);
         });
+    } else {
+        console.log('⚠️ Kein Track gefunden für diesen Mood.');
     }
 }
 
 function setupForm() {
     formElement.addEventListener('submit', async (event) => {
         event.preventDefault();
-        
+
         const content = inputElement.value.trim();
         if (!content) return;
-        
-        // Add user message
+
         const userMessage = { role: 'user', content };
         messageHistory.messages.push(userMessage);
         messageHistory = truncateHistory(messageHistory);
         updateChatHistory();
-        
+
         inputElement.value = '';
-        
-        // Send to AI
+
         await sendToAI();
     });
 }
 
 async function sendToAI() {
-    // Add loading message
     const loadingMessage = { role: 'assistant', content: 'Schreibe...', loading: true };
     messageHistory.messages.push(loadingMessage);
     updateChatHistory();
-    
+
     try {
-        // Call API
         const response = await fetch(API_ENDPOINT, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ messages: messageHistory.messages.filter(m => !m.loading) }),
         });
-        
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        
-        // Remove loading message
-        messageHistory.messages.pop();
-        
-        // Add AI response
+
+        messageHistory.messages.pop(); // remove loading
         const botMessage = data.completion?.choices?.[0]?.message || {
             role: 'assistant',
             content: 'Entschuldigung, ich konnte keine Antwort generieren.'
         };
-        
+
         messageHistory.messages.push(botMessage);
         messageHistory = truncateHistory(messageHistory);
         updateChatHistory();
-        
-        // Check if mood was detected in response and play music
+
         detectAndPlayMoodMusic(botMessage.content);
-        
+
     } catch (error) {
         console.error('API Error:', error);
-        
-        // Remove loading message
-        messageHistory.messages.pop();
-        
-        // Add error message
+
+        messageHistory.messages.pop(); // remove loading
         const errorMessage = {
             role: 'assistant',
             content: 'Entschuldigung, es gab einen Fehler beim Verarbeiten deiner Nachricht. Bitte versuche es erneut.'
         };
-        
+
         messageHistory.messages.push(errorMessage);
         updateChatHistory();
     }
@@ -214,9 +207,10 @@ function setupKeypress() {
 }
 
 function detectAndPlayMoodMusic(content) {
-    const moodMatch = content.toLowerCase().match(/\b(happy|sad|energetic|chill)\b/);
+    const moodMatch = content.toLowerCase().match(/\b(happy|sad|energetic|chill|romantic|angry)\b/);
     if (moodMatch) {
         const detectedMood = moodMatch[1];
+        console.log(`🧠 AI erkannte Mood: ${detectedMood}`);
         playMoodMusic(detectedMood);
     }
 }
@@ -229,7 +223,7 @@ function updateChatHistory() {
             return `<div class="message ${msg.role}${loadingClass}">${msg.content.replace(/\n/g, '<br>')}</div>`;
         })
         .join('');
-    
+
     scrollToBottom(chatHistoryElement);
 }
 
@@ -240,12 +234,12 @@ function scrollToBottom(container) {
 function truncateHistory(history) {
     const { messages } = history;
     const [system, ...rest] = messages;
-    
+
     if (rest.length > MAX_HISTORY_LENGTH) {
         return {
             messages: [system, ...rest.slice(-MAX_HISTORY_LENGTH)]
         };
     }
-    
+
     return history;
 }
