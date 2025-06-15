@@ -10,13 +10,7 @@ const moodsToSongs = {
     chill: ['music/chill_techno.mp3', 'music/chill1_techno.mp3', 'music/chill2_techno.mp3']
 };
 
-// Mood responses
-const moodResponses = {
-    happy: "🎉 Ich spüre deine gute Laune! Hier ist ein fröhlicher Techno-Beat, der perfekt zu deiner Stimmung passt!",
-    sad: "💙 Ich verstehe, dass du dich nicht so gut fühlst. Lass diese melancholischen Techno-Klänge deine Seele berühren.",
-    energetic: "⚡ Wow, du sprühst vor Energie! Dieser kraftvolle Techno-Track wird dich noch mehr antreiben!",
-    chill: "😌 Zeit zum Entspannen! Dieser chille Techno-Beat hilft dir dabei, zur Ruhe zu kommen."
-};
+
 
 const moodEmojis = {
     happy: '😊',
@@ -35,6 +29,7 @@ let messageHistory = {
             Wenn jemand ein Mood (happy, sad, energetic, chill) wählt oder erwähnt, reagiere darauf und erkläre, welche Art von Techno-Musik zu dieser Stimmung passt.
             
             Du kannst auch normale Gespräche führen und auf Fragen antworten. Sei freundlich, enthusiastisch über Musik und hilfsbereit.
+            Gib kurze freundliche Antworten und versuche, die Stimmung des Nutzers zu erkennen.
             
             Die verfügbaren Moods sind:
             - happy: Fröhliche, uplifting Techno-Beats
