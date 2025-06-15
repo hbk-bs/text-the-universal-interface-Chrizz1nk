@@ -7,7 +7,9 @@ const moodsToSongs = {
     happy: 'music/happy_techno.mp3',
     sad: 'music/sad_techno.mp3',
     energetic: ['music/energetic_techno.mp3', 'music/hard_techno.mp3'],
-    chill: ['music/chill_techno.mp3', 'music/chill1_techno.mp3', 'music/chill2_techno.mp3']
+    chill: ['music/chill_techno.mp3', 'music/chill1_techno.mp3', 'music/chill2_techno.mp3'],
+    romantic: 'music/romantic_techno.mp3',
+    angry: 'music/angry_techno.mp3'
 };
 
 
@@ -16,7 +18,9 @@ const moodEmojis = {
     happy: '😊',
     sad: '😢',
     energetic: '⚡',
-    chill: '😌'
+    chill: '😌',
+    romantic: '💕',
+    angry: '😡'
 };
 
 // Message history
