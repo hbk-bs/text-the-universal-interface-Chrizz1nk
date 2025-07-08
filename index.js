@@ -2,21 +2,21 @@ const API_ENDPOINT = 'https://chrizz--455cde100cc54d9da8ef5b40e1b41a04.web.val.r
 const MAX_HISTORY_LENGTH = 10;
 
 const moodsToSongs = {
-    glücklich: ['music/happy_techno.mp3', 'music/happy1_techno.mp3'],
-    traurig: ['music/sad_techno.mp3', 'music/sad1_techno.mp3'],
-    voller energy: ['music/energetic_techno.mp3', 'music/hard_techno.mp3'],
+    happy: ['music/happy_techno.mp3', 'music/happy1_techno.mp3'],
+    sad: ['music/sad_techno.mp3', 'music/sad1_techno.mp3'],
+    energetic: ['music/energetic_techno.mp3', 'music/hard_techno.mp3'],
     chill: ['music/chill_techno.mp3', 'music/chill1_techno.mp3', 'music/chill2_techno.mp3'],
-    romantisch: ['music/romantic_techno.mp3', 'music/romantic1_techno.mp3', 'music/romantic2_techno.mp3'],
-    wütend: ['music/angry_techno.mp3', 'music/angry1_techno.mp3']
+    romantic: ['music/romantic_techno.mp3', 'music/romantic1_techno.mp3', 'music/romantic2_techno.mp3'],
+    angry: ['music/angry_techno.mp3', 'music/angry1_techno.mp3']
 };
 
 const moodEmojis = {
-    glücklich: '😊',
-    traurig: '😢',
-    voller energy: '⚡',
+    happy: '😊',
+    sad: '😢',
+    energetic: '⚡',
     chill: '😌',
-    romantisch: '💕',
-    wütend: '😡'
+    romantic: '💕',
+    angry: '😡'
 };
 
 let messageHistory = {
@@ -31,12 +31,12 @@ let messageHistory = {
             Gib kurze freundliche Antworten und versuche, die Stimmung des Nutzers zu erkennen.
             
             Die verfügbaren Moods sind:
-            - glücklich: Fröhliche, uplifting Techno-Beats
-            - traurig: Melancholische, emotionale Techno-Klänge  
-            - voller energy: Kraftvolle, intensive Techno-Tracks
+            - happy: Fröhliche, uplifting Techno-Beats
+            - sad: Melancholische, emotionale Techno-Klänge  
+            - energetic: Kraftvolle, intensive Techno-Tracks
             - chill: Entspannte, ambient Techno-Musik
-            - romantisch: Liebevolle, melodische Techno-Stimmung
-            - wütend: Harte, aggressive Techno-Beats`
+            - romantic: Liebevolle, melodische Techno-Stimmung
+            - angry: Harte, aggressive Techno-Beats`
         }
     ]
 };
@@ -194,7 +194,7 @@ function detectAndPlayMoodMusic(content) {
         return;
     }
 
-    const moodMatch = content.toLowerCase().match(/\b(glücklich|traurig|voller energy|chill|romantisch|wütend)\b/);
+    const moodMatch = content.toLowerCase().match(/\b(happy|sad|energetic|chill|romantic|angry)\b/);
     if (moodMatch) {
         const detectedMood = moodMatch[1];
         console.log(`🤖 Automatisch erkanntes Mood: ${detectedMood}`);
